@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use axum_login::{AuthUser, AuthnBackend, UserId};
+use password_auth::verify_password;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, SqlitePool};
 use tokio::task;
@@ -57,4 +58,37 @@ pub enum Error {
 
     #[error(transparent)]
     TaskJoin(#[from] task::JoinError),
+}
+
+#[async_trait]
+impl AuthnBackend for Backend {
+    type User = User;
+    type Credentials = Credentials;
+    type Error = Error;
+
+    async fn authenticate(
+        &self,
+        creds: Self::Credentials,
+    ) -> Result<Option<Self::User>, Self::Error> {
+        let query = "select * from users where username = ?";
+        let user: Option<Self::User> = sqlx::query_as(&query)
+            .bind(creds.username)
+            .fetch_optional(&self.db)
+            .await?;
+
+        task::spawn_blocking(|| {
+            Ok(user.filter(|user| verify_password(creds.password, &user.password).is_ok()))
+        })
+        .await?
+    }
+
+    async fn get_user(&self, user_id: &UserId<Self>) -> Result<Option<Self::User>, Self::Error> {
+        let query = "select * from users wehre id =?";
+        let user = sqlx::query_as(&query)
+            .bind(user_id)
+            .fetch_optional(&self.db)
+            .await?;
+
+        Ok(user)
+    }
 }
