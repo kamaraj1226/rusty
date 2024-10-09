@@ -1,0 +1,18 @@
+[package]
+name = "web_app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+async-trait = "0.1.83"
+axum = "0.7.7"
+axum-login = "0.16.0"
+serde = { version = "1.0.210", features = ["derive"] }
+serde_json = "1.0.128"
+sqlx = "0.8.2"
+thiserror = "1.0.64"
+time = "0.3.36"
+tokio = { version = "1.40.0", features = ["rt", "rt-multi-thread", "signal"] }
+tower = "0.5.1"
+tower-sessions = "0.13.0"
+tower-sessions-sqlx-store = { version = "0.14.1", features = ["sqlite"] }
